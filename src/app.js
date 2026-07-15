@@ -12,6 +12,7 @@ app.post("/signup", async (req, res) => {
 
   // creating a new user instance using the User model and the request body data
   const user = new User(req.body);
+  // user.runValidators = true;
 
   try {
     await user.save();
@@ -70,11 +71,10 @@ app.patch("/user", async (req, res) => {
   const updateData = req.body;
 
   try {
-    const user = await User.findByIdAndUpdate({_id : userId}, updateData, { returnDocument: "before" });
-    console.log(user);
+    const user = await User.findByIdAndUpdate({_id : userId}, updateData, { returnDocument: "before", runValidators: true });
     res.send("User updated successfully");
   }catch (err) {
-    res.status(404).send("Something went wrong");
+    res.status(404).send("Update failed : " + err.message);
   }
 });
 
