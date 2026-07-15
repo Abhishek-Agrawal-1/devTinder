@@ -4,7 +4,7 @@ const connectDB = require("./config/database");
 const app = express();
 const User = require("./models/user");
 
-app.use(express.json());// middleware is activated for all the routes 
+app.use(express.json());// middleware is activated for all the routes
 
 app.post("/signup", async (req, res) => {
 
@@ -17,7 +17,35 @@ app.post("/signup", async (req, res) => {
   } catch (err) {
     res.status(500).send("Error creating user : " + err.message);
   }
+});
+
+
+app.get("/users", async (req, res) => {
+  const userEmail = req.body.emailId;
+
+  try {
+    const users = await User.find({ "emailId": userEmail });
+    if (users.length === 0) {
+      res.status(404).send("User not found");
+    } else {
+      res.send(users);
+    }
+  } catch (err) {
+    res.status(404).send("Something went wrong");
+  }
 })
+
+
+// Feed API - GET / Feed - get all users from the database
+app.get("/feed", async (req, res) => {
+  try {
+    const users = await User.find({});
+    res.send(users);
+  } catch (err) {
+    res.send("Something went wrong");
+  }
+})
+
 
 connectDB()
   .then(() => {
