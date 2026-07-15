@@ -66,14 +66,27 @@ app.delete("/user", async (req, res) => {
 });
 
 // updating a user - API
-app.patch("/user", async (req, res) => {
-  const userId = req.body.userId;
+app.patch("/user/:userId", async (req, res) => {
+  const userId = req.params?.userId;
   const updateData = req.body;
 
   try {
-    const user = await User.findByIdAndUpdate({_id : userId}, updateData, { returnDocument: "before", runValidators: true });
+
+    const ALLOWED_UPDATES = ["photoUrl", "about", "skills", "gender", "age", "password"];
+
+    const isUpdateAllowed = Object.keys(updateData).every((k) => ALLOWED_UPDATES.includes(k));
+
+    if (!isUpdateAllowed) {
+      throw new Error("Invalid update fields");
+    }
+
+    if(updateData?.skills.length > 10){
+      throw new Error("Skills cannot be more than 10");
+    }
+
+    const user = await User.findByIdAndUpdate({ _id: userId }, updateData, { returnDocument: "before", runValidators: true });
     res.send("User updated successfully");
-  }catch (err) {
+  } catch (err) {
     res.status(404).send("Update failed : " + err.message);
   }
 });
