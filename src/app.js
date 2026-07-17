@@ -5,8 +5,11 @@ const User = require("./models/user");
 const { validateSignUpData } = require("./utilis/validation");
 const bcrypt = require('bcrypt');
 const validator = require('validator');
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
 
 app.use(express.json());// middleware is activated for all the routes
+app.use(cookieParser());
 
 
 // user signup - API
@@ -44,33 +47,68 @@ app.post("/signup", async (req, res) => {
 
 //user Login - API
 app.post("/login", async (req, res) => {
-  
+
   try {
 
-    const { emailId , password } = req.body;
+    const { emailId, password } = req.body;
 
-    if(!validator.isEmail(emailId)){
+    if (!validator.isEmail(emailId)) {
       throw new Error("Email is not valid");
     }
 
-    const user = await User.findOne({ emailId : emailId});
+    const user = await User.findOne({ emailId: emailId });
 
-    if(!user) {
+    if (!user) {
       throw new Error("Incorrect Credentials");
     }
 
-    const isPasswordValid = await bcrypt.compare(password , user.password);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
 
-    if(isPasswordValid){
+    if (isPasswordValid) {
+
+      //creating a JWT token
+      const token = await jwt.sign({ _id: user._id }, "Abhishek@123$3");
+
+      //Add the token to cookie and send response back to the user
+      res.cookie("token", token);
+
+
       res.send("Login Succesfully");
-    }else{
+    } else {
       throw new Error("Incorrect Credentials");
     }
 
-  }catch(err) {
+  } catch (err) {
     res.status(404).send("ERROR : " + err.message);
   }
 });
+
+
+app.get("/profile", async (req, res) => {
+  try {
+    const cookies = req.cookies;
+
+    const { token } = cookies;
+    // validate my token
+
+    if(!token) {
+      throw new Error("Login your Account");
+    }
+
+    const decodedMessage = await jwt.verify(token, "Abhishek@123$3");
+
+    const { _id } = decodedMessage;
+
+    const user = await User.findById(_id);
+    if(!user) {
+      throw new Error("Login or SignUp your Account");
+    }
+
+    res.send(user);
+  } catch (err) {
+    res.status(404).send("ERROR : " + err.message);
+  }
+})
 
 
 // finding users by email - API
@@ -135,7 +173,7 @@ app.patch("/user/:userId", async (req, res) => {
     }
 
     // user.runValidators = true;
-    const user = await User.findByIdAndUpdate( userId, updateData, { new : true , runValidators : true });
+    const user = await User.findByIdAndUpdate(userId, updateData, { new: true, runValidators: true });
     res.send("User updated successfully");
   } catch (err) {
     res.status(404).send("Update failed : " + err.message);
