@@ -4,6 +4,7 @@ const app = express();
 const User = require("./models/user");
 const { validateSignUpData } = require("./utilis/validation");
 const bcrypt = require('bcrypt');
+const validator = require('validator');
 
 app.use(express.json());// middleware is activated for all the routes
 
@@ -37,6 +38,37 @@ app.post("/signup", async (req, res) => {
     res.send("User created successfully");
   } catch (err) {
     res.status(500).send("ERROR : " + err.message);
+  }
+});
+
+
+//user Login - API
+app.post("/login", async (req, res) => {
+  
+  try {
+
+    const { emailId , password } = req.body;
+
+    if(!validator.isEmail(emailId)){
+      throw new Error("Email is not valid");
+    }
+
+    const user = await User.findOne({ emailId : emailId});
+
+    if(!user) {
+      throw new Error("Incorrect Credentials");
+    }
+
+    const isPasswordValid = await bcrypt.compare(password , user.password);
+
+    if(isPasswordValid){
+      res.send("Login Succesfully");
+    }else{
+      throw new Error("Incorrect Credentials");
+    }
+
+  }catch(err) {
+    res.status(404).send("ERROR : " + err.message);
   }
 });
 
