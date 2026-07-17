@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt');
 const validator = require('validator');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
+const { userAuth } = require('./middleware/auth.js');
 
 app.use(express.json());// middleware is activated for all the routes
 app.use(cookieParser());
@@ -84,25 +85,10 @@ app.post("/login", async (req, res) => {
 });
 
 
-app.get("/profile", async (req, res) => {
+app.get("/profile", userAuth , async (req, res) => {
   try {
-    const cookies = req.cookies;
 
-    const { token } = cookies;
-    // validate my token
-
-    if(!token) {
-      throw new Error("Login your Account");
-    }
-
-    const decodedMessage = await jwt.verify(token, "Abhishek@123$3");
-
-    const { _id } = decodedMessage;
-
-    const user = await User.findById(_id);
-    if(!user) {
-      throw new Error("Login or SignUp your Account");
-    }
+    const user = req.user;
 
     res.send(user);
   } catch (err) {
