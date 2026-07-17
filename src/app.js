@@ -1,8 +1,9 @@
 const express = require("express");
 const connectDB = require("./config/database");
-
 const app = express();
 const User = require("./models/user");
+const { validateSignUpData } = require("./utilis/validation");
+const bcrypt = require('bcrypt');
 
 app.use(express.json());// middleware is activated for all the routes
 
@@ -10,15 +11,32 @@ app.use(express.json());// middleware is activated for all the routes
 // user signup - API
 app.post("/signup", async (req, res) => {
 
-  // creating a new user instance using the User model and the request body data
-  const user = new User(req.body);
-  // user.runValidators = true;
 
   try {
+
+    // validation od data
+    validateSignUpData(req);
+
+    //Encrypt the password
+    const { firstName, lastName, emailId, password } = req.body;
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    console.log(passwordHash);
+
+
+    // creating a new user instance using the User model and the request body data
+    const user = new User({
+      firstName,
+      lastName,
+      emailId,
+      password: passwordHash,
+    });
+
+
     await user.save();
     res.send("User created successfully");
   } catch (err) {
-    res.status(500).send("Error creating user : " + err.message);
+    res.status(500).send("ERROR : " + err.message);
   }
 });
 
@@ -72,7 +90,7 @@ app.patch("/user/:userId", async (req, res) => {
 
   try {
 
-    const ALLOWED_UPDATES = ["photoUrl", "about", "skills", "gender", "age", "password"];
+    const ALLOWED_UPDATES = ["photoUrl", "about", "skills", "gender", "age"];
 
     const isUpdateAllowed = Object.keys(updateData).every((k) => ALLOWED_UPDATES.includes(k));
 
@@ -80,11 +98,12 @@ app.patch("/user/:userId", async (req, res) => {
       throw new Error("Invalid update fields");
     }
 
-    if(updateData?.skills.length > 10){
+    if (updateData?.skills?.length > 10) {
       throw new Error("Skills cannot be more than 10");
     }
 
-    const user = await User.findByIdAndUpdate({ _id: userId }, updateData, { returnDocument: "before", runValidators: true });
+    // user.runValidators = true;
+    const user = await User.findByIdAndUpdate( userId, updateData, { new : true , runValidators : true });
     res.send("User updated successfully");
   } catch (err) {
     res.status(404).send("Update failed : " + err.message);
@@ -102,3 +121,4 @@ connectDB()
   .catch((err) => {
     console.error("DB Error:", err);
   });
+
