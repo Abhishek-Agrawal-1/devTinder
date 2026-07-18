@@ -7,7 +7,6 @@ const validator = require('validator');
 
 profileRouter.get("/profile/view", userAuth, async (req, res) => {
     try {
-
         const user = req.user;
 
         res.send(user);
@@ -23,10 +22,10 @@ profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
             throw new Error("Invalid edit request");
         }
 
-        const updateField = req.body;
+        const updateData = req.body;
 
-        if (updateField?.skills?.length > 10) {
-            throw new Error("Cannot add more than 10 skills");
+        if(updateData?.skills?.length > 10){
+            throw new Error("Cannot add Skills more than 10");
         }
 
         const loggedInUser = req.user;
@@ -34,7 +33,6 @@ profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
         Object.keys(req.body).forEach((key) => (loggedInUser[key] = req.body[key]));
 
         await loggedInUser.save();
-
 
         res.json({
             message: `${loggedInUser.firstName}, your profile updated Successfully`,

@@ -25,9 +25,20 @@ const validateEditProfileData = (req) => {
         "photoUrl"
     ];
 
-const isEditAllowed = Object.keys(req.body).every((field) => allowedEditFields.includes(field));
+    const isEditAllowed = Object.keys(req.body).every((field) => allowedEditFields.includes(field));
 
-return isEditAllowed;
+    if (req.body.photoUrl && !validator.isURL(req.body.photoUrl)) {
+        throw new Error("Invalid Photo URL");
+    }
+
+    if (
+        req.body.gender &&
+        !["male", "female", "other"].includes(req.body.gender)
+    ) {
+        throw new Error("Invalid Gender");
+    }
+
+    return isEditAllowed;
 };
 
 
